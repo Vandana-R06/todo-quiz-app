@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Advanced To-Do + Quiz App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #333;
+      transition: 0.3s;
+    }
+
+    .dark {
+      background: #1e1e2f;
+      color: white;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .dark .container { background: #2c2c3e; }
+
+    h1 { text-align: center; }
+
+    .tabs { display: flex; justify-content: space-around; margin-bottom: 20px; }
+
+    .tabs button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #ddd;
+    }
+
+    .tabs button.active { background: #667eea; color: white; }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    input {
+      padding: 10px;
+      width: 65%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+
+    .add { background: #28a745; color: white; }
+    .clear { background: red; color: white; }
+
+    ul { list-style: none; padding: 0; }
+
+    li {
+      padding: 10px;
+      margin: 10px 0;
+      background: #f1f1f1;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .completed { text-decoration: line-through; color: gray; }
+
+    .progress {
+      height: 10px;
+      background: #ddd;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: green;
+      width: 0%;
+      border-radius: 10px;
+    }
+
+    .timer { font-weight: bold; margin-bottom: 10px; }
+
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🚀 Advanced To-Do + Quiz App</h1>
+
+  <button onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('todo')">To-Do</button>
+    <button class="tab-btn" onclick="showTab('quiz')">Quiz</button>
+  </div>
+
+  <!-- ToDo Section -->
+  <div id="todo" class="section active">
+    <input type="text" id="taskInput" placeholder="Enter task...">
+    <button class="add" onclick="addTask()">Add</button>
+    <button class="clear" onclick="clearTasks()">Clear All</button>
+    <ul id="taskList"></ul>
+  </div>
+
+  <!-- Quiz Section -->
+  <div id="quiz" class="section">
+    <div class="timer" id="timer">Time: 30s</div>
+    <div id="quizContainer"></div>
+    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+    <button onclick="submitQuiz()">Submit Quiz</button>
+    <div id="score"></div>
+  </div>
+</div>
+
+<script>
+  function showTab(tab) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(tab).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+
+  // Dark Mode
+  function toggleDarkMode() {
+    document.body.classList.toggle('dark');
+  }
+
+  // TODO with LocalStorage
+  function addTask() {
+    const input = document.getElementById('taskInput');
+    if (!input.value) return;
+
+    const li = document.createElement('li');
+    li.innerHTML = `${input.value} 
+      <div>
+        <button onclick="toggleComplete(this)">✔️</button>
+        <button onclick="removeTask(this)">❌</button>
+      </div>`;
+
+    document.getElementById('taskList').appendChild(li);
+    saveTasks();
+    input.value = '';
+  }
+
+  function toggleComplete(btn) {
+    btn.parentElement.parentElement.classList.toggle('completed');
+    saveTasks();
+  }
+
+  function removeTask(btn) {
+    btn.parentElement.parentElement.remove();
+    saveTasks();
+  }
+
+  function clearTasks() {
+    document.getElementById('taskList').innerHTML = '';
+    localStorage.removeItem('tasks');
+  }
+
+  function saveTasks() {
+    localStorage.setItem('tasks', document.getElementById('taskList').innerHTML);
+  }
+
+  function loadTasks() {
+    document.getElementById('taskList').innerHTML = localStorage.getItem('tasks') || '';
+  }
+
+  loadTasks();
+
+  // QUIZ
+  const quizData = [
+    { question: "HTML stands for?", options: ["Hyper Text Markup Language", "High Tech", "Home Tool", "None"], answer: 0 },
+    { question: "CSS is used for?", options: ["Logic", "Styling", "Database", "Server"], answer: 1 },
+    { question: "JS is?", options: ["Programming Language", "Browser", "OS", "None"], answer: 0 }
+  ];
+
+  function loadQuiz() {
+    const container = document.getElementById('quizContainer');
+    quizData.forEach((q, i) => {
+      let html = `<p>${q.question}</p>`;
+      q.options.forEach((opt, j) => {
+        html += `<label><input type='radio' name='q${i}' value='${j}'> ${opt}</label><br>`;
+      });
+      container.innerHTML += html;
+    });
+  }
+
+  function submitQuiz() {
+    let score = 0;
+    quizData.forEach((q, i) => {
+      const selected = document.querySelector(`input[name=q${i}]:checked`);
+      if (selected && parseInt(selected.value) === q.answer) score++;
+    });
+    document.getElementById('score').innerText = `Score: ${score}/${quizData.length}`;
+  }
+
+  loadQuiz();
+
+  // Timer
+  let time = 30;
+  const timerEl = document.getElementById('timer');
+  const progressBar = document.getElementById('progressBar');
+
+  const interval = setInterval(() => {
+    time--;
+    timerEl.innerText = `Time: ${time}s`;
+    progressBar.style.width = ((30 - time) / 30) * 100 + '%';
+
+    if (time <= 0) {
+      clearInterval(interval);
+      submitQuiz();
+    }
+  }, 1000);
+</script>
+
+</body>
+</html>
